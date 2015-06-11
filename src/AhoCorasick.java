@@ -10,13 +10,14 @@ public class AhoCorasick{
 	protected Map <Integer,LinkedList<String>> Output;
 	protected int numStates;
 	protected state zeroState;
+	protected boolean verbose;
 
 	protected class state{
 		private int id; 
 		private char val;
 		Map<Character,Integer> nextStates = new HashMap<Character,Integer>(); 
 		public state(int id,char val){
-			System.out.print("Creating state " + id + " for " + val + "\n");
+			if(verbose) System.out.print("Creating state " + id + " for " + val + "\n");
 			this.id = id;
 			this.val = val;
 		}
@@ -28,7 +29,8 @@ public class AhoCorasick{
 		}
 	}
 	
-	public AhoCorasick(){
+	public AhoCorasick(boolean verbose){
+		this.verbose = verbose;
 		stateMap = new HashMap<Integer,state>();
 		Failure = new HashMap<Integer,Integer>();
 		Output = new HashMap<Integer,LinkedList<String>>();
@@ -72,7 +74,7 @@ public class AhoCorasick{
 		state currState;
 		for(int i=0; i<input.length; i++){
 			currState = zeroState;
-			System.out.print("New word " + input[i] + " current state " +  currState.getId() +"\n");
+			if(verbose) System.out.print("New word " + input[i] + " current state " +  currState.getId() +"\n");
 			int j = 0;
 			while(true){
 				if (j >= input[i].length()){
@@ -91,12 +93,12 @@ public class AhoCorasick{
 				state nextState = new state(++numStates,input[i].charAt(j));
 				stateMap.put(numStates, nextState);
 				currState.nextStates.put(input[i].charAt(j), numStates);
-				System.out.print(currState.getId() + " has next " + currState.nextStates.toString() + "\n");
+				if(verbose) System.out.print(currState.getId() + " has next " + currState.nextStates.toString() + "\n");
 				currState = nextState;
 				j++;
 			}
 			outputAdd(currState.getId(),input[i]);
-			System.out.print("Output" + Output.toString() + "\n");
+			if(verbose) System.out.print("Output" + Output.toString() + "\n");
 		}
 	}
 	
@@ -131,7 +133,36 @@ public class AhoCorasick{
 				outputAdd(ns,Output.get(Failure.get(ns)));
 			}
 		}
-		System.out.print(Output.toString() + "\n");
-		System.out.print(Failure.toString() + "\n");
+		if(verbose) System.out.print(Output.toString() + "\n");
+		if(verbose) System.out.print(Failure.toString() + "\n");
+	}
+	
+	protected LinkedList<String> search(String searchText){
+		LinkedList<String> out = new LinkedList<String>();
+		
+		state currState = zeroState;
+		for(int i=0; i<searchText.length(); i++){
+			char cc = searchText.charAt(i);
+			while(currState.getId() != 0 && currState.nextStates.containsKey(cc) == false){
+				if (currState.getId() == 0)
+					currState = zeroState;
+				else
+					currState = stateMap.get(Failure.get(currState.getId()));
+			}
+			if (currState.nextStates.containsKey(cc)){
+				currState = stateMap.get(currState.nextStates.get(cc));
+			}
+			else{
+				if(currState.getId() == 0)
+					currState = zeroState;
+				else
+					if(verbose) System.out.print("Something wrong...\n");
+			}
+			if(verbose) System.out.print(currState.getId() + "=>");
+			if (Output.containsKey(currState.getId())){
+				out.addAll(Output.get(currState.getId()));
+			}
+		}
+		return out;
 	}
 }
