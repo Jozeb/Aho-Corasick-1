@@ -136,21 +136,45 @@ public class AhoCorasick{
 		if(verbose) System.out.print(Output.toString() + "\n");
 		if(verbose) System.out.print(Failure.toString() + "\n");
 	}
-	
-	protected LinkedList<String> search(String searchText){
+	protected boolean getMatchChar(state currState, char cc, boolean isCaseSensitive){
+		boolean matchChar;
+		if (isCaseSensitive){
+			if (currState.nextStates.containsKey(cc) == false)
+				matchChar = false;
+			else
+				matchChar = true;
+		}
+		else{
+			if (currState.nextStates.containsKey(Character.toLowerCase(cc)) == false && currState.nextStates.containsKey(Character.toUpperCase(cc)) == false)
+				matchChar = false;
+			else
+				matchChar = true;
+		}
+		return matchChar;
+	}
+	protected LinkedList<String> search(String searchText, boolean isCaseSensitive){
 		LinkedList<String> out = new LinkedList<String>();
 		
 		state currState = zeroState;
 		for(int i=0; i<searchText.length(); i++){
 			char cc = searchText.charAt(i);
-			while(currState.getId() != 0 && currState.nextStates.containsKey(cc) == false){
+			while(currState.getId() != 0 && !getMatchChar(currState,cc,isCaseSensitive)){
 				if (currState.getId() == 0)
 					currState = zeroState;
 				else
 					currState = stateMap.get(Failure.get(currState.getId()));
 			}
-			if (currState.nextStates.containsKey(cc)){
-				currState = stateMap.get(currState.nextStates.get(cc));
+
+			if(getMatchChar(currState,cc,isCaseSensitive)){
+				state tmpState = stateMap.get(currState.nextStates.get(cc));
+				if (!isCaseSensitive && tmpState == null){
+					if(Character.isLowerCase(cc))
+						currState = stateMap.get(currState.nextStates.get(Character.toUpperCase(cc)));
+					else
+						currState = stateMap.get(currState.nextStates.get(Character.toLowerCase(cc)));
+				}
+				else
+					currState = tmpState;
 			}
 			else{
 				if(currState.getId() == 0)
